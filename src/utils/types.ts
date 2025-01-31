@@ -5,6 +5,7 @@ export interface IUser {
   name: string;
   email: string;
   password: string;
+  phone: string;
   role: "ADMIN" | "GYM_OWNER" | "MEMBER";
   createdAt: Date;
   updatedAt: Date;
@@ -37,5 +38,35 @@ export interface IMember {
   userId: Types.ObjectId;
   gymId: Types.ObjectId;
   membershipType: "MONTHLY" | "QUARTERLY" | "YEARLY";
-  status: "";
+  status: "ACTIVE" | "INACTIVE" | "CANCELLED" | "ON_HOLD";
+  personalInfo: {
+    height?: number;
+    weight?: number;
+    bloodGroup?: string;
+    medicalConditions?: string[];
+  };
+  contact: {
+    phone: string;
+    email: string;
+    emergencyContact: {
+      name: string;
+      phone: string;
+      relationship: string;
+    };
+  };
+  attendance: {
+    date: Date;
+    checkIn: Date;
+    checkOut: Date;
+    verificationMethod: "QR" | "MANUAL" | "PHOTO";
+  }[];
+  payments: {
+    amount: number;
+    date: Date;
+    status: "PENDING" | "SUCCESS" | "FAILED";
+    transactionId: string;
+    paymentMethod: "CASH" | "CARD" | "UPI";
+  }[];
+  createdAt: Date;
+  updatedAt: Date;
 }
