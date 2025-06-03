@@ -7,7 +7,7 @@ import { connect } from "mongoose";
 
 const app = new Hono();
 
-// middlware
+// middleware
 app.use("*", cors());
 app.use("*", prettyJSON());
 app.use("*", logger());
@@ -29,12 +29,14 @@ app.route("/api/gyms", gyms);
 app.route("/api/members", members);
 
 // mongodb connection
-const MONGODB_URI = process.env.MONGODB_URI || "chumma value";
+const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/gymrat";
 const PORT = process.env.PORT || 3030;
 
 connect(MONGODB_URI)
   .then(() => console.log("📦 Connected to MongoDB"))
   .catch((err) => console.error("MongoDB connection error:", err));
+
+console.log(`🚀 Server starting on port ${PORT}`);
 
 export default {
   fetch: app.fetch,

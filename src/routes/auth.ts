@@ -79,6 +79,45 @@ auth.post("/login", zValidator("json", loginSchema), async (c) => {
 
     const user = await User.findOne({ email });
     if (!user) {
+      return c.json({ error: "Invalid credentials" }, 400);
+    }
+
+    // Verify password
+    const storedPassword = Buffer.from(user.password, 'hex');
+    const salt = storedPassword.subarray(0, 16);
+    const hash = storedPassword.subarray(16);
+    const hashedPassword = scrypt(password, salt, { N: 2**14, r: 8, p: 1, dkLen: 32 });
+    
+    if (!timingSafeEqual(hash, hashedPassword)) {
+      return c.json({ error: "Invalid credentials" }, 400);
+    }
+
+    const token = jwt.sign(
+      { userId: user._id, email: user.email, role: user.role },
+      process.env.JWT_SECRET || "secret",
+      { expiresIn: "7d" }
+    );
+
+    return c.json({
+      status: "success",
+      message: "Login successful",
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      }
+    });
+  } catch (error) {
+    return c.json({ error: "Login failed" }, 500);
+  }
+});
+
+export { auth };
+
+    const user = await User.findOne({ email });
+    if (!user) {
       return c.json({ error: "Invalid credentials" }, 401);
     }
 

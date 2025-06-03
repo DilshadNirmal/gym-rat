@@ -17,6 +17,61 @@ const createGymSchema = z.object({
     pincode: z.string()
   }),
   subscription: z.object({
+    plan: z.enum(["BASIC", "PRO", "PREMIUM", "ENTERPRISE"]),
+    startDate: z.string(),
+    endDate: z.string()
+  })
+});
+
+gyms.get("/", authMiddleware, async (c) => {
+  try {
+    const user = c.get("user");
+    let query = {};
+    
+    if (user.role === "GYM_OWNER") {
+      query = { owner: user._id };
+    }
+    
+    const gymsList = await Gym.find(query).populate("owner", "name email");
+    return c.json({ gyms: gymsList });
+  } catch (error) {
+    return c.json({ error: "Failed to fetch gyms" }, 500);
+  }
+});
+
+gyms.post("/", authMiddleware, requireRole(["ADMIN", "GYM_OWNER"]), zValidator("json", createGymSchema), async (c) => {
+  try {
+    const user = c.get("user");
+    const gymData = c.req.valid("json");
+    
+    const gym = new Gym({
+      ...gymData,
+      owner: user._id,
+      subscription: {
+        ...gymData.subscription,
+        status: "ACTIVE"
+      }
+    });
+    
+    await gym.save();
+    return c.json({ status: "success", message: "Gym created successfully", gym });
+  } catch (error) {
+    return c.json({ error: "Failed to create gym" }, 500);
+  }
+});
+
+export { gyms };
+
+const createGymSchema = z.object({
+  name: z.string().min(2),
+  location: z.object({
+    address: z.string(),
+    city: z.string(),
+    state: z.string(),
+    country: z.string(),
+    pincode: z.string()
+  }),
+  subscription: z.object({
     plan: z.enum(["BASIC", "PRO", "PREMIUM", "ENTERPRISE"])
   })
 });

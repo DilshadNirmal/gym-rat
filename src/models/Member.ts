@@ -13,13 +13,13 @@ const memberSchema = new Schema<IMember>({
   status: { 
     type: String, 
     enum: ["ACTIVE", "INACTIVE", "CANCELLED", "ON_HOLD"], 
-    required: true 
+    default: "ACTIVE" 
   },
   personalInfo: {
-    height: { type: Number },
-    weight: { type: Number },
-    bloodGroup: { type: String },
-    medicalConditions: [{ type: String }]
+    height: Number,
+    weight: Number,
+    bloodGroup: String,
+    medicalConditions: [String]
   },
   contact: {
     phone: { type: String, required: true },
@@ -31,28 +31,26 @@ const memberSchema = new Schema<IMember>({
     }
   },
   attendance: [{
-    date: { type: Date, required: true },
-    checkIn: { type: Date, required: true },
-    checkOut: { type: Date },
+    date: { type: Date, default: Date.now },
+    checkIn: Date,
+    checkOut: Date,
     verificationMethod: { 
       type: String, 
-      enum: ["QR", "MANUAL", "PHOTO"], 
-      required: true 
+      enum: ["QR", "MANUAL", "PHOTO"] 
     }
   }],
   payments: [{
     amount: { type: Number, required: true },
-    date: { type: Date, required: true },
+    date: { type: Date, default: Date.now },
     status: { 
       type: String, 
       enum: ["PENDING", "SUCCESS", "FAILED"], 
-      required: true 
+      default: "PENDING" 
     },
-    transactionId: { type: String, required: true },
+    transactionId: String,
     paymentMethod: { 
       type: String, 
-      enum: ["CASH", "CARD", "UPI"], 
-      required: true 
+      enum: ["CASH", "CARD", "UPI"] 
     }
   }]
 }, {

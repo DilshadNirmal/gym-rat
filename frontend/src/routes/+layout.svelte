@@ -1,125 +1,94 @@
-
 <script>
   import { onMount } from 'svelte';
-  import { user, isAuthenticated } from '$lib/stores.js';
-  import 'open-props/style';
-  import 'open-props/normalize';
+  import { user, isLoggedIn } from '$lib/stores.js';
+  import { goto } from '$app/navigation';
 
-  onMount(() => {
-    const token = localStorage.getItem('auth_token');
-    if (token) {
-      isAuthenticated.set(true);
-      // You might want to decode and set user data here
-    }
-  });
+  let currentUser = null;
+  let loggedIn = false;
+
+  user.subscribe(value => currentUser = value);
+  isLoggedIn.subscribe(value => loggedIn = value);
+
+  function logout() {
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('user_data');
+    user.set(null);
+    isLoggedIn.set(false);
+    goto('/login');
+  }
 </script>
 
-<svelte:head>
-  <title>GymRat - Gym Management</title>
-</svelte:head>
-
-<div class="app">
-  <header class="header">
-    <nav class="nav">
-      <div class="nav-brand">
-        <h1>GymRat 🏋️‍♂️</h1>
+<nav>
+  <div class="nav-container">
+    <h1>GymRat 🏋️‍♂️</h1>
+    {#if loggedIn}
+      <div class="nav-links">
+        <a href="/dashboard">Dashboard</a>
+        <span>Welcome, {currentUser?.name}</span>
+        <button on:click={logout}>Logout</button>
       </div>
-      
-      {#if $isAuthenticated}
-        <div class="nav-links">
-          <a href="/dashboard">Dashboard</a>
-          <a href="/gyms">Gyms</a>
-          <a href="/members">Members</a>
-          <button class="btn-logout" on:click={() => {
-            localStorage.removeItem('auth_token');
-            isAuthenticated.set(false);
-            window.location.href = '/login';
-          }}>
-            Logout
-          </button>
-        </div>
-      {/if}
-    </nav>
-  </header>
+    {/if}
+  </div>
+</nav>
 
-  <main class="main">
-    <slot />
-  </main>
-</div>
+<main>
+  <slot />
+</main>
 
 <style>
   :global(body) {
     margin: 0;
-    font-family: var(--font-sans);
-    background-color: var(--gray-1);
-    color: var(--gray-9);
+    font-family: Arial, sans-serif;
+    background-color: #f5f5f5;
   }
 
-  .app {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .header {
-    background-color: var(--blue-6);
+  nav {
+    background-color: #2c3e50;
     color: white;
-    padding: var(--size-3);
-    box-shadow: var(--shadow-2);
+    padding: 1rem 0;
   }
 
-  .nav {
+  .nav-container {
+    max-width: 1200px;
+    margin: 0 auto;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    max-width: 1200px;
-    margin: 0 auto;
-  }
-
-  .nav-brand h1 {
-    margin: 0;
-    font-size: var(--font-size-4);
-    font-weight: var(--font-weight-7);
+    padding: 0 2rem;
   }
 
   .nav-links {
     display: flex;
-    gap: var(--size-4);
+    gap: 1rem;
     align-items: center;
   }
 
   .nav-links a {
     color: white;
     text-decoration: none;
-    padding: var(--size-2) var(--size-3);
-    border-radius: var(--radius-2);
-    transition: background-color 0.2s;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    transition: background-color 0.3s;
   }
 
   .nav-links a:hover {
-    background-color: var(--blue-7);
+    background-color: #34495e;
   }
 
-  .btn-logout {
-    background-color: var(--red-6);
+  button {
+    background-color: #e74c3c;
     color: white;
     border: none;
-    padding: var(--size-2) var(--size-3);
-    border-radius: var(--radius-2);
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
     cursor: pointer;
-    font-size: var(--font-size-1);
-    transition: background-color 0.2s;
   }
 
-  .btn-logout:hover {
-    background-color: var(--red-7);
+  button:hover {
+    background-color: #c0392b;
   }
 
-  .main {
-    flex: 1;
-    padding: var(--size-4);
-    max-width: 1200px;
-    margin: 0 auto;
-    width: 100%;
+  main {
+    min-height: calc(100vh - 80px);
   }
 </style>

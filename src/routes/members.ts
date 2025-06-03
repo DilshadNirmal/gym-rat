@@ -29,6 +29,42 @@ const addMemberSchema = z.object({
   })
 });
 
+members.get("/", authMiddleware, async (c) => {
+  try {
+    const gymId = c.req.query("gymId");
+    const user = c.get("user");
+    
+    let query = {};
+    if (gymId) {
+      query = { gymId };
+    } else if (user.role === "GYM_OWNER") {
+      const userGyms = await Gym.find({ owner: user._id });
+      const gymIds = userGyms.map(gym => gym._id);
+      query = { gymId: { $in: gymIds } };
+    }
+    
+    const membersList = await Member.find(query).populate("userId", "name email").populate("gymId", "name");
+    return c.json({ members: membersList });
+  } catch (error) {
+    return c.json({ error: "Failed to fetch members" }, 500);
+  }
+});
+
+members.post("/", authMiddleware, requireRole(["ADMIN", "GYM_OWNER"]), zValidator("json", addMemberSchema), async (c) => {
+  try {
+    const memberData = c.req.valid("json");
+    
+    const member = new Member(memberData);
+    await member.save();
+    
+    return c.json({ status: "success", message: "Member added successfully", member });
+  } catch (error) {
+    return c.json({ error: "Failed to add member" }, 500);
+  }
+});
+
+export { members };
+
 const attendanceSchema = z.object({
   memberId: z.string(),
   verificationMethod: z.enum(["QR", "MANUAL", "PHOTO"])
