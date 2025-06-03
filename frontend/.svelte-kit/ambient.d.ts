@@ -29,12 +29,10 @@ declare module '$env/static/private' {
 	export const REPLIT_PID1_FLAG_REPLIT_RTLD_LOADER: string;
 	export const npm_command: string;
 	export const COLORTERM: string;
-	export const HISTCONTROL: string;
 	export const REPL_OWNER: string;
 	export const NIXPKGS_ALLOW_UNFREE: string;
 	export const PKG_CONFIG_PATH: string;
 	export const HOSTNAME: string;
-	export const HISTSIZE: string;
 	export const __EGL_VENDOR_LIBRARY_FILENAMES: string;
 	export const NODE: string;
 	export const REPLIT_DOMAINS: string;
@@ -45,7 +43,6 @@ declare module '$env/static/private' {
 	export const npm_config_local_prefix: string;
 	export const PKG_CONFIG_PATH_FOR_TARGET: string;
 	export const REPLIT_CLI: string;
-	export const GIT_CONFIG_GLOBAL: string;
 	export const REPLIT_USER: string;
 	export const REPLIT_SUBCLUSTER: string;
 	export const PWD: string;
@@ -59,12 +56,10 @@ declare module '$env/static/private' {
 	export const HOME: string;
 	export const LANG: string;
 	export const REPL_IDENTITY: string;
-	export const HISTFILE: string;
 	export const LS_COLORS: string;
 	export const REPLIT_RIPPKGS_INDICES: string;
 	export const npm_package_version: string;
 	export const GIT_ASKPASS: string;
-	export const REPLIT_USER_RUN: string;
 	export const REPL_IMAGE: string;
 	export const REPLIT_PID1_FLAG_NIXMODULES_BEFORE_REPLIT_NIX: string;
 	export const XDG_CACHE_HOME: string;
@@ -89,10 +84,10 @@ declare module '$env/static/private' {
 	export const REPLIT_USERID: string;
 	export const PROMPT_DIRTRIM: string;
 	export const LIBGL_DRIVERS_PATH: string;
+	export const REPLIT_MODE: string;
 	export const LOCALE_ARCHIVE: string;
 	export const npm_config_user_agent: string;
 	export const npm_execpath: string;
-	export const REPLIT_RUN_PATH: string;
 	export const REPLIT_PID2: string;
 	export const REPLIT_ENVIRONMENT: string;
 	export const npm_package_json: string;
@@ -100,7 +95,6 @@ declare module '$env/static/private' {
 	export const REPL_IDENTITY_KEY: string;
 	export const PATH: string;
 	export const DOCKER_CONFIG: string;
-	export const HISTFILESIZE: string;
 	export const CFLAGS: string;
 	export const REPL_PUBKEYS: string;
 	export const npm_node_execpath: string;
@@ -142,12 +136,10 @@ declare module '$env/dynamic/private' {
 		REPLIT_PID1_FLAG_REPLIT_RTLD_LOADER: string;
 		npm_command: string;
 		COLORTERM: string;
-		HISTCONTROL: string;
 		REPL_OWNER: string;
 		NIXPKGS_ALLOW_UNFREE: string;
 		PKG_CONFIG_PATH: string;
 		HOSTNAME: string;
-		HISTSIZE: string;
 		__EGL_VENDOR_LIBRARY_FILENAMES: string;
 		NODE: string;
 		REPLIT_DOMAINS: string;
@@ -158,7 +150,6 @@ declare module '$env/dynamic/private' {
 		npm_config_local_prefix: string;
 		PKG_CONFIG_PATH_FOR_TARGET: string;
 		REPLIT_CLI: string;
-		GIT_CONFIG_GLOBAL: string;
 		REPLIT_USER: string;
 		REPLIT_SUBCLUSTER: string;
 		PWD: string;
@@ -172,12 +163,10 @@ declare module '$env/dynamic/private' {
 		HOME: string;
 		LANG: string;
 		REPL_IDENTITY: string;
-		HISTFILE: string;
 		LS_COLORS: string;
 		REPLIT_RIPPKGS_INDICES: string;
 		npm_package_version: string;
 		GIT_ASKPASS: string;
-		REPLIT_USER_RUN: string;
 		REPL_IMAGE: string;
 		REPLIT_PID1_FLAG_NIXMODULES_BEFORE_REPLIT_NIX: string;
 		XDG_CACHE_HOME: string;
@@ -202,10 +191,10 @@ declare module '$env/dynamic/private' {
 		REPLIT_USERID: string;
 		PROMPT_DIRTRIM: string;
 		LIBGL_DRIVERS_PATH: string;
+		REPLIT_MODE: string;
 		LOCALE_ARCHIVE: string;
 		npm_config_user_agent: string;
 		npm_execpath: string;
-		REPLIT_RUN_PATH: string;
 		REPLIT_PID2: string;
 		REPLIT_ENVIRONMENT: string;
 		npm_package_json: string;
@@ -213,7 +202,6 @@ declare module '$env/dynamic/private' {
 		REPL_IDENTITY_KEY: string;
 		PATH: string;
 		DOCKER_CONFIG: string;
-		HISTFILESIZE: string;
 		CFLAGS: string;
 		REPL_PUBKEYS: string;
 		npm_node_execpath: string;
