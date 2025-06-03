@@ -2,847 +2,814 @@
 <script>
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
-  import { user, isLoggedIn, gyms as gymsStore } from '$lib/stores.js';
-  import { gyms, members } from '$lib/api.js';
-  
+  import { user, isLoggedIn, gyms, members } from '$lib/stores.js';
+  import { api } from '$lib/api.js';
+
   let currentUser = null;
-  let loggedIn = false;
-  let gymsList = [];
-  let membersList = [];
+  let userGyms = [];
+  let gymMembers = [];
   let loading = true;
   let error = '';
-  let selectedGym = null;
-  let showStats = false;
-  
+  let activeTab = 'overview';
+
   user.subscribe(value => currentUser = value);
-  isLoggedIn.subscribe(value => loggedIn = value);
-  gymsStore.subscribe(value => gymsList = value);
-  
+
   onMount(async () => {
-    if (!loggedIn) {
+    if (!$isLoggedIn) {
       goto('/login');
       return;
     }
-    
+
     try {
-      const gymsResponse = await gyms.list();
-      gymsStore.set(gymsResponse.gyms || []);
-      
-      if (gymsResponse.gyms?.length > 0) {
-        selectedGym = gymsResponse.gyms[0];
-        const membersResponse = await members.list(gymsResponse.gyms[0]._id);
-        membersList = membersResponse.members || [];
+      if (currentUser?.role === 'GYM_OWNER' || currentUser?.role === 'ADMIN') {
+        const gymsResponse = await api.get('/gyms');
+        userGyms = gymsResponse.gyms || [];
+        gyms.set(userGyms);
+
+        const membersResponse = await api.get('/members');
+        gymMembers = membersResponse.members || [];
+        members.set(gymMembers);
       }
-      
-      setTimeout(() => showStats = true, 500);
     } catch (err) {
-      error = 'Failed to load data';
-      console.error(err);
+      error = err.message || 'Failed to load data';
     } finally {
       loading = false;
     }
   });
 
-  function selectGym(gym) {
-    selectedGym = gym;
-    loadGymMembers(gym._id);
+  function setActiveTab(tab) {
+    activeTab = tab;
   }
 
-  async function loadGymMembers(gymId) {
-    try {
-      const membersResponse = await members.list(gymId);
-      membersList = membersResponse.members || [];
-    } catch (err) {
-      console.error('Failed to load members:', err);
-    }
+  function getGreeting() {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
   }
 
-  function getStatusColor(status) {
-    switch (status?.toLowerCase()) {
-      case 'active': return '#4ecdc4';
-      case 'expired': return '#ff6b6b';
-      case 'cancelled': return '#ff9f43';
-      default: return '#a8a8a8';
-    }
-  }
-
-  function formatDate(dateString) {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  }
+  $: stats = {
+    totalGyms: userGyms.length,
+    totalMembers: gymMembers.length,
+    activeMembers: gymMembers.filter(m => m.status === 'ACTIVE').length,
+    revenue: gymMembers.length * 1500 // Mock calculation
+  };
 </script>
 
-<div class="dashboard">
-  <div class="container">
-    <div class="dashboard-header">
-      <div class="welcome-section">
-        <h1 class="welcome-title">
-          Welcome back, <span class="user-name">{currentUser?.name}</span>
-        </h1>
-        <p class="welcome-subtitle">
-          Manage your gym operations with ease
-        </p>
-      </div>
-      <div class="quick-actions">
-        <button class="action-btn primary">
-          <span class="btn-icon">➕</span>
-          Add Member
-        </button>
-        <button class="action-btn secondary">
-          <span class="btn-icon">🏢</span>
-          New Gym
-        </button>
-      </div>
-    </div>
-    
-    {#if loading}
-      <div class="loading-container">
-        <div class="loading-spinner-large"></div>
-        <p>Loading your dashboard...</p>
-      </div>
-    {:else if error}
-      <div class="error-container">
-        <div class="error-icon">⚠️</div>
-        <h3>Oops! Something went wrong</h3>
-        <p>{error}</p>
-        <button class="retry-btn" on:click={() => location.reload()}>
-          🔄 Retry
-        </button>
-      </div>
-    {:else}
-      <!-- Stats Cards -->
-      <div class="stats-grid" class:show={showStats}>
-        <div class="stat-card" style="--delay: 0.1s">
-          <div class="stat-icon">🏢</div>
-          <div class="stat-content">
-            <h3 class="stat-number">{gymsList.length}</h3>
-            <p class="stat-label">Total Gyms</p>
+{#if loading}
+  <div class="loading-container">
+    <div class="loading-spinner"></div>
+    <p>Loading your dashboard...</p>
+  </div>
+{:else}
+  <div class="dashboard">
+    <div class="dashboard-container">
+      <!-- Header -->
+      <header class="dashboard-header">
+        <div class="header-content">
+          <div class="welcome-section">
+            <h1 class="welcome-title">{getGreeting()}, {currentUser?.name}.</h1>
+            <p class="welcome-subtitle">Here's what's happening with your fitness business today.</p>
           </div>
-          <div class="stat-trend positive">↗️ +12%</div>
-        </div>
-        
-        <div class="stat-card" style="--delay: 0.2s">
-          <div class="stat-icon">👥</div>
-          <div class="stat-content">
-            <h3 class="stat-number">{membersList.length}</h3>
-            <p class="stat-label">Active Members</p>
+          <div class="header-actions">
+            <button class="action-button secondary">
+              <span class="button-icon">📊</span>
+              Reports
+            </button>
+            <button class="action-button primary">
+              <span class="button-icon">➕</span>
+              Add Member
+            </button>
           </div>
-          <div class="stat-trend positive">↗️ +8%</div>
         </div>
-        
-        <div class="stat-card" style="--delay: 0.3s">
-          <div class="stat-icon">💼</div>
-          <div class="stat-content">
-            <h3 class="stat-number">{currentUser?.role || 'N/A'}</h3>
-            <p class="stat-label">Your Role</p>
-          </div>
-          <div class="stat-trend neutral">➡️ Active</div>
-        </div>
-        
-        <div class="stat-card" style="--delay: 0.4s">
-          <div class="stat-icon">📊</div>
-          <div class="stat-content">
-            <h3 class="stat-number">98.5%</h3>
-            <p class="stat-label">System Health</p>
-          </div>
-          <div class="stat-trend positive">↗️ +2%</div>
-        </div>
-      </div>
+      </header>
 
-      <!-- Main Content Grid -->
-      <div class="content-grid">
-        <!-- Gyms Section -->
-        <div class="content-card gyms-section">
-          <div class="card-header">
-            <h2>
-              <span class="header-icon">🏢</span>
-              Your Gyms
-            </h2>
-            <div class="card-actions">
-              <button class="filter-btn active">All</button>
-              <button class="filter-btn">Active</button>
+      <!-- Navigation Tabs -->
+      <nav class="dashboard-nav">
+        <div class="nav-tabs">
+          <button 
+            class="nav-tab" 
+            class:active={activeTab === 'overview'}
+            on:click={() => setActiveTab('overview')}
+          >
+            Overview
+          </button>
+          <button 
+            class="nav-tab" 
+            class:active={activeTab === 'gyms'}
+            on:click={() => setActiveTab('gyms')}
+          >
+            Gyms
+          </button>
+          <button 
+            class="nav-tab" 
+            class:active={activeTab === 'members'}
+            on:click={() => setActiveTab('members')}
+          >
+            Members
+          </button>
+          <button 
+            class="nav-tab" 
+            class:active={activeTab === 'analytics'}
+            on:click={() => setActiveTab('analytics')}
+          >
+            Analytics
+          </button>
+        </div>
+      </nav>
+
+      <!-- Main Content -->
+      <main class="dashboard-main">
+        {#if activeTab === 'overview'}
+          <!-- Stats Cards -->
+          <section class="stats-section">
+            <div class="stats-grid">
+              <div class="stat-card">
+                <div class="stat-header">
+                  <span class="stat-icon">🏢</span>
+                  <span class="stat-label">Total Gyms</span>
+                </div>
+                <div class="stat-value">{stats.totalGyms}</div>
+                <div class="stat-change positive">+2 this month</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-header">
+                  <span class="stat-icon">👥</span>
+                  <span class="stat-label">Total Members</span>
+                </div>
+                <div class="stat-value">{stats.totalMembers}</div>
+                <div class="stat-change positive">+{Math.floor(stats.totalMembers * 0.12)} this month</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-header">
+                  <span class="stat-icon">✅</span>
+                  <span class="stat-label">Active Members</span>
+                </div>
+                <div class="stat-value">{stats.activeMembers}</div>
+                <div class="stat-change neutral">{Math.round((stats.activeMembers / stats.totalMembers) * 100)}% of total</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-header">
+                  <span class="stat-icon">💰</span>
+                  <span class="stat-label">Monthly Revenue</span>
+                </div>
+                <div class="stat-value">₹{stats.revenue.toLocaleString()}</div>
+                <div class="stat-change positive">+8.2% from last month</div>
+              </div>
             </div>
-          </div>
-          
-          {#if gymsList.length > 0}
-            <div class="gyms-list">
-              {#each gymsList as gym, index}
-                <div 
-                  class="gym-item" 
-                  class:selected={selectedGym?._id === gym._id}
-                  style="--delay: {(index + 1) * 0.1}s"
-                  on:click={() => selectGym(gym)}
-                  role="button"
-                  tabindex="0"
-                >
-                  <div class="gym-avatar">
-                    {gym.name.charAt(0).toUpperCase()}
-                  </div>
-                  <div class="gym-info">
+          </section>
+
+          <!-- Recent Activity -->
+          <section class="activity-section">
+            <div class="section-header">
+              <h2 class="section-title">Recent Activity</h2>
+              <button class="section-action">View All</button>
+            </div>
+            <div class="activity-list">
+              <div class="activity-item">
+                <div class="activity-avatar">👤</div>
+                <div class="activity-content">
+                  <div class="activity-title">New member registration</div>
+                  <div class="activity-subtitle">John Doe joined CrossFit Downtown</div>
+                </div>
+                <div class="activity-time">2h ago</div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-avatar">💳</div>
+                <div class="activity-content">
+                  <div class="activity-title">Payment received</div>
+                  <div class="activity-subtitle">₹1,500 from Sarah Wilson</div>
+                </div>
+                <div class="activity-time">4h ago</div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-avatar">📊</div>
+                <div class="activity-content">
+                  <div class="activity-title">Monthly report generated</div>
+                  <div class="activity-subtitle">October performance summary</div>
+                </div>
+                <div class="activity-time">1d ago</div>
+              </div>
+            </div>
+          </section>
+        {/if}
+
+        {#if activeTab === 'gyms'}
+          <section class="content-section">
+            <div class="section-header">
+              <h2 class="section-title">Your Gyms</h2>
+              <button class="section-action primary">Add New Gym</button>
+            </div>
+            <div class="gym-grid">
+              {#each userGyms as gym}
+                <div class="gym-card">
+                  <div class="gym-header">
                     <h3 class="gym-name">{gym.name}</h3>
-                    <p class="gym-location">📍 {gym.location?.city}, {gym.location?.state}</p>
-                    <div class="gym-meta">
-                      <span class="gym-status" style="color: {getStatusColor(gym.subscription?.status)}">
-                        ● {gym.subscription?.status || 'Unknown'}
-                      </span>
-                      <span class="gym-members">👥 {membersList.length} members</span>
+                    <span class="gym-status active">Active</span>
+                  </div>
+                  <div class="gym-details">
+                    <div class="gym-location">
+                      📍 {gym.location.city}, {gym.location.state}
+                    </div>
+                    <div class="gym-plan">
+                      💎 {gym.subscription.plan} Plan
+                    </div>
+                    <div class="gym-members">
+                      👥 {gym.members?.length || 0} Members
                     </div>
                   </div>
                   <div class="gym-actions">
-                    <button class="action-dot">⚡</button>
+                    <button class="gym-action">View Details</button>
+                    <button class="gym-action secondary">Manage</button>
                   </div>
                 </div>
               {/each}
             </div>
-          {:else}
-            <div class="empty-state">
-              <div class="empty-icon">🏗️</div>
-              <h3>No gyms yet</h3>
-              <p>Start by creating your first gym</p>
-              <button class="create-gym-btn">
-                <span>🚀</span>
-                Create Gym
-              </button>
-            </div>
-          {/if}
-        </div>
+          </section>
+        {/if}
 
-        <!-- Members Section -->
-        <div class="content-card members-section">
-          <div class="card-header">
-            <h2>
-              <span class="header-icon">👥</span>
-              {selectedGym ? `${selectedGym.name} Members` : 'Members'}
-            </h2>
-            <div class="card-actions">
-              <button class="search-btn">🔍</button>
-              <button class="filter-btn">Filter</button>
+        {#if activeTab === 'members'}
+          <section class="content-section">
+            <div class="section-header">
+              <h2 class="section-title">Members</h2>
+              <button class="section-action primary">Add Member</button>
             </div>
-          </div>
-          
-          {#if membersList.length > 0}
-            <div class="members-list">
-              {#each membersList as member, index}
-                <div class="member-item" style="--delay: {(index + 1) * 0.05}s">
-                  <div class="member-avatar">
-                    {member.userId?.name?.charAt(0)?.toUpperCase() || 'M'}
-                  </div>
-                  <div class="member-info">
-                    <h4 class="member-name">{member.userId?.name || 'Unknown'}</h4>
-                    <p class="member-email">📧 {member.userId?.email || 'No email'}</p>
-                    <div class="member-meta">
-                      <span class="membership-type">{member.membershipType}</span>
-                      <span class="member-status" style="color: {getStatusColor(member.status)}">
-                        ● {member.status}
-                      </span>
+            <div class="members-table">
+              <div class="table-header">
+                <div class="table-cell">Name</div>
+                <div class="table-cell">Gym</div>
+                <div class="table-cell">Status</div>
+                <div class="table-cell">Membership</div>
+                <div class="table-cell">Actions</div>
+              </div>
+              {#each gymMembers.slice(0, 10) as member}
+                <div class="table-row">
+                  <div class="table-cell">
+                    <div class="member-info">
+                      <div class="member-avatar">
+                        {member.userId?.name?.charAt(0)?.toUpperCase() || 'M'}
+                      </div>
+                      <div class="member-details">
+                        <div class="member-name">{member.userId?.name || 'Unknown'}</div>
+                        <div class="member-email">{member.contact?.email}</div>
+                      </div>
                     </div>
                   </div>
-                  <div class="member-actions">
-                    <button class="action-btn-small">👁️</button>
-                    <button class="action-btn-small">✏️</button>
+                  <div class="table-cell">{member.gymId?.name || 'Unknown Gym'}</div>
+                  <div class="table-cell">
+                    <span class="status-badge {member.status.toLowerCase()}">{member.status}</span>
+                  </div>
+                  <div class="table-cell">{member.membershipType}</div>
+                  <div class="table-cell">
+                    <button class="table-action">View</button>
                   </div>
                 </div>
               {/each}
             </div>
-          {:else}
-            <div class="empty-state">
-              <div class="empty-icon">👋</div>
-              <h3>No members yet</h3>
-              <p>Add your first member to get started</p>
-              <button class="add-member-btn">
-                <span>➕</span>
-                Add Member
-              </button>
+          </section>
+        {/if}
+
+        {#if activeTab === 'analytics'}
+          <section class="content-section">
+            <div class="section-header">
+              <h2 class="section-title">Analytics</h2>
+              <button class="section-action">Export Data</button>
             </div>
-          {/if}
-        </div>
-      </div>
-    {/if}
+            <div class="analytics-grid">
+              <div class="analytics-card">
+                <h3 class="analytics-title">Member Growth</h3>
+                <div class="analytics-chart">
+                  <div class="chart-placeholder">
+                    📈 Chart visualization would go here
+                  </div>
+                </div>
+              </div>
+              <div class="analytics-card">
+                <h3 class="analytics-title">Revenue Trends</h3>
+                <div class="analytics-chart">
+                  <div class="chart-placeholder">
+                    💰 Revenue chart would go here
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        {/if}
+      </main>
+    </div>
   </div>
-</div>
+{/if}
 
 <style>
-  .dashboard {
-    min-height: 100vh;
-    padding: 2rem;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  .loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    gap: 20px;
   }
 
-  .container {
-    max-width: 1400px;
+  .loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #f5f5f7;
+    border-top: 3px solid #0071e3;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  .dashboard {
+    background: #f5f5f7;
+    min-height: 100vh;
+  }
+
+  .dashboard-container {
+    max-width: 1200px;
     margin: 0 auto;
+    padding: 0 22px;
   }
 
   .dashboard-header {
+    padding: 40px 0 32px;
+  }
+
+  .header-content {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 3rem;
-    gap: 2rem;
-  }
-
-  .welcome-section {
-    flex: 1;
+    gap: 32px;
   }
 
   .welcome-title {
-    font-size: 2.5rem;
-    font-weight: bold;
-    margin: 0 0 0.5rem 0;
-    color: #ffffff;
-  }
-
-  .user-name {
-    background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    font-size: 40px;
+    line-height: 1.1;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+    margin: 0 0 8px;
+    color: #1d1d1f;
   }
 
   .welcome-subtitle {
-    font-size: 1.1rem;
-    opacity: 0.8;
+    font-size: 19px;
+    line-height: 1.42105;
+    font-weight: 400;
+    letter-spacing: 0.012em;
     margin: 0;
+    color: #86868b;
   }
 
-  .quick-actions {
+  .header-actions {
     display: flex;
-    gap: 1rem;
+    gap: 12px;
+    flex-shrink: 0;
   }
 
-  .action-btn {
+  .action-button {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1.5rem;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 980px;
     border: none;
-    border-radius: 15px;
-    font-weight: 600;
+    font-size: 14px;
+    font-weight: 400;
     cursor: pointer;
     transition: all 0.3s ease;
-    font-size: 0.9rem;
+    letter-spacing: -0.016em;
   }
 
-  .action-btn.primary {
-    background: linear-gradient(45deg, #ff6b6b, #ff8e8e);
-    color: #ffffff;
+  .action-button.primary {
+    background: #0071e3;
+    color: white;
   }
 
-  .action-btn.secondary {
-    background: rgba(255, 255, 255, 0.2);
-    color: #ffffff;
-    backdrop-filter: blur(10px);
+  .action-button.secondary {
+    background: white;
+    color: #1d1d1f;
+    border: 1px solid #d2d2d7;
   }
 
-  .action-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  .action-button:hover {
+    transform: translateY(-1px);
   }
 
-  .loading-container {
-    text-align: center;
-    padding: 4rem 2rem;
+  .dashboard-nav {
+    margin-bottom: 32px;
   }
 
-  .loading-spinner-large {
-    width: 60px;
-    height: 60px;
-    border: 4px solid rgba(255, 255, 255, 0.3);
-    border-top: 4px solid #ffffff;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin: 0 auto 2rem;
+  .nav-tabs {
+    display: flex;
+    background: white;
+    border-radius: 12px;
+    padding: 4px;
+    gap: 2px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   }
 
-  .error-container {
-    text-align: center;
-    padding: 4rem 2rem;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 20px;
-    backdrop-filter: blur(20px);
-  }
-
-  .error-icon {
-    font-size: 4rem;
-    margin-bottom: 1rem;
-  }
-
-  .retry-btn {
-    background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
-    color: #ffffff;
+  .nav-tab {
+    flex: 1;
+    padding: 12px 24px;
+    background: none;
     border: none;
-    padding: 0.75rem 2rem;
-    border-radius: 15px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 400;
+    color: #86868b;
     cursor: pointer;
-    font-weight: 600;
-    margin-top: 1rem;
     transition: all 0.3s ease;
+    letter-spacing: -0.016em;
   }
 
-  .retry-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  .nav-tab.active {
+    background: #0071e3;
+    color: white;
+  }
+
+  .nav-tab:hover:not(.active) {
+    background: #f5f5f7;
+    color: #1d1d1f;
+  }
+
+  .stats-section {
+    margin-bottom: 40px;
   }
 
   .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 3rem;
-    opacity: 0;
-    transform: translateY(20px);
-    transition: all 0.8s ease;
-  }
-
-  .stats-grid.show {
-    opacity: 1;
-    transform: translateY(0);
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
   }
 
   .stat-card {
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 20px;
-    padding: 2rem;
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+  }
+
+  .stat-header {
     display: flex;
     align-items: center;
-    gap: 1.5rem;
-    position: relative;
-    overflow: hidden;
-    animation: slideInUp 0.6s ease var(--delay, 0s) both;
-    transition: all 0.3s ease;
-  }
-
-  .stat-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
-    background: rgba(255, 255, 255, 0.2);
-  }
-
-  @keyframes slideInUp {
-    from {
-      opacity: 0;
-      transform: translateY(30px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+    gap: 8px;
+    margin-bottom: 16px;
   }
 
   .stat-icon {
-    font-size: 3rem;
-    filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.3));
-  }
-
-  .stat-content {
-    flex: 1;
-  }
-
-  .stat-number {
-    font-size: 2rem;
-    font-weight: bold;
-    margin: 0 0 0.5rem 0;
-    color: #ffffff;
+    font-size: 20px;
   }
 
   .stat-label {
-    margin: 0;
-    opacity: 0.8;
-    font-size: 0.9rem;
+    font-size: 14px;
+    color: #86868b;
+    font-weight: 400;
   }
 
-  .stat-trend {
-    font-size: 0.8rem;
-    padding: 0.25rem 0.5rem;
-    border-radius: 10px;
+  .stat-value {
+    font-size: 32px;
     font-weight: 600;
+    color: #1d1d1f;
+    margin-bottom: 8px;
+    line-height: 1.125;
   }
 
-  .stat-trend.positive {
-    background: rgba(78, 205, 196, 0.2);
-    color: #4ecdc4;
+  .stat-change {
+    font-size: 12px;
+    font-weight: 400;
   }
 
-  .stat-trend.neutral {
-    background: rgba(255, 255, 255, 0.2);
-    color: #ffffff;
+  .stat-change.positive {
+    color: #28ca42;
   }
 
-  .content-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 2rem;
+  .stat-change.neutral {
+    color: #86868b;
   }
 
-  .content-card {
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 20px;
-    overflow: hidden;
-    animation: fadeInUp 0.8s ease;
-  }
-
-  @keyframes fadeInUp {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  .card-header {
-    padding: 2rem 2rem 1rem;
+  .section-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 24px;
   }
 
-  .card-header h2 {
+  .section-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: #1d1d1f;
     margin: 0;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 1.5rem;
-    color: #ffffff;
   }
 
-  .header-icon {
-    font-size: 1.5rem;
-  }
-
-  .card-actions {
-    display: flex;
-    gap: 0.5rem;
-  }
-
-  .filter-btn {
-    background: rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    padding: 0.5rem 1rem;
-    border-radius: 10px;
-    cursor: pointer;
-    font-size: 0.8rem;
-    transition: all 0.3s ease;
-  }
-
-  .filter-btn:hover,
-  .filter-btn.active {
-    background: rgba(255, 255, 255, 0.2);
-    color: #ffffff;
-  }
-
-  .search-btn {
+  .section-action {
     background: none;
     border: none;
-    color: rgba(255, 255, 255, 0.8);
-    font-size: 1.2rem;
+    color: #0071e3;
+    font-size: 14px;
     cursor: pointer;
-    padding: 0.5rem;
-    border-radius: 8px;
-    transition: all 0.3s ease;
+    font-weight: 400;
   }
 
-  .search-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: #ffffff;
+  .section-action.primary {
+    background: #0071e3;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 980px;
   }
 
-  .gyms-list,
-  .members-list {
-    padding: 1rem 2rem 2rem;
-    max-height: 600px;
-    overflow-y: auto;
+  .activity-section,
+  .content-section {
+    background: white;
+    border-radius: 12px;
+    padding: 32px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(0, 0, 0, 0.1);
   }
 
-  .gym-item {
+  .activity-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .activity-item {
     display: flex;
     align-items: center;
-    gap: 1rem;
-    padding: 1.5rem;
-    margin-bottom: 1rem;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 15px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    animation: slideInRight 0.5s ease var(--delay, 0s) both;
+    gap: 16px;
+    padding: 16px;
+    background: #f5f5f7;
+    border-radius: 10px;
   }
 
-  .gym-item:hover,
-  .gym-item.selected {
-    background: rgba(255, 255, 255, 0.15);
-    transform: translateX(5px);
-    border-color: rgba(78, 205, 196, 0.5);
-  }
-
-  @keyframes slideInRight {
-    from {
-      opacity: 0;
-      transform: translateX(-20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
-  }
-
-  .gym-avatar {
-    width: 50px;
-    height: 50px;
+  .activity-avatar {
+    width: 40px;
+    height: 40px;
+    background: #0071e3;
     border-radius: 50%;
-    background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: bold;
-    font-size: 1.2rem;
-    color: #ffffff;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    font-size: 18px;
+    flex-shrink: 0;
   }
 
-  .gym-info {
+  .activity-content {
     flex: 1;
   }
 
-  .gym-name {
-    margin: 0 0 0.25rem 0;
-    font-size: 1.1rem;
+  .activity-title {
+    font-size: 14px;
     font-weight: 600;
-    color: #ffffff;
+    color: #1d1d1f;
+    margin-bottom: 4px;
   }
 
-  .gym-location {
-    margin: 0 0 0.5rem 0;
-    font-size: 0.9rem;
-    opacity: 0.8;
+  .activity-subtitle {
+    font-size: 12px;
+    color: #86868b;
   }
 
-  .gym-meta {
+  .activity-time {
+    font-size: 12px;
+    color: #86868b;
+    flex-shrink: 0;
+  }
+
+  .gym-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 24px;
+  }
+
+  .gym-card {
+    background: #f5f5f7;
+    border-radius: 12px;
+    padding: 24px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+  }
+
+  .gym-header {
     display: flex;
-    gap: 1rem;
-    font-size: 0.8rem;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
   }
 
-  .gym-status,
-  .member-status {
+  .gym-name {
+    font-size: 18px;
     font-weight: 600;
+    color: #1d1d1f;
+    margin: 0;
   }
 
-  .gym-members {
-    opacity: 0.8;
+  .gym-status {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .gym-status.active {
+    background: rgba(40, 202, 66, 0.1);
+    color: #28ca42;
+  }
+
+  .gym-details {
+    margin-bottom: 20px;
+  }
+
+  .gym-details > div {
+    margin-bottom: 8px;
+    font-size: 14px;
+    color: #86868b;
   }
 
   .gym-actions {
     display: flex;
-    gap: 0.5rem;
+    gap: 8px;
   }
 
-  .action-dot {
-    width: 35px;
-    height: 35px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.1);
+  .gym-action {
+    flex: 1;
+    padding: 8px 16px;
+    border-radius: 8px;
     border: none;
-    color: #ffffff;
+    font-size: 14px;
     cursor: pointer;
-    transition: all 0.3s ease;
-    font-size: 1rem;
+    background: #0071e3;
+    color: white;
   }
 
-  .action-dot:hover {
-    background: rgba(78, 205, 196, 0.3);
-    transform: scale(1.1);
+  .gym-action.secondary {
+    background: white;
+    color: #1d1d1f;
+    border: 1px solid #d2d2d7;
   }
 
-  .member-item {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 1rem;
-    margin-bottom: 0.75rem;
-    background: rgba(255, 255, 255, 0.05);
+  .members-table {
+    background: #f5f5f7;
     border-radius: 12px;
-    transition: all 0.3s ease;
-    animation: fadeInLeft 0.4s ease var(--delay, 0s) both;
+    overflow: hidden;
   }
 
-  .member-item:hover {
-    background: rgba(255, 255, 255, 0.1);
-    transform: translateX(3px);
-  }
-
-  @keyframes fadeInLeft {
-    from {
-      opacity: 0;
-      transform: translateX(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
-  }
-
-  .member-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: linear-gradient(45deg, #4ecdc4, #44a08d);
-    display: flex;
+  .table-header,
+  .table-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+    gap: 16px;
+    padding: 16px 24px;
     align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    color: #ffffff;
-    font-size: 0.9rem;
+  }
+
+  .table-header {
+    background: white;
+    font-weight: 600;
+    font-size: 14px;
+    color: #1d1d1f;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  }
+
+  .table-row {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  }
+
+  .table-row:last-child {
+    border-bottom: none;
   }
 
   .member-info {
-    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .member-avatar {
+    width: 32px;
+    height: 32px;
+    background: #0071e3;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
   }
 
   .member-name {
-    margin: 0 0 0.25rem 0;
-    font-size: 1rem;
-    font-weight: 600;
-    color: #ffffff;
+    font-size: 14px;
+    font-weight: 500;
+    color: #1d1d1f;
   }
 
   .member-email {
-    margin: 0 0 0.5rem 0;
-    font-size: 0.8rem;
-    opacity: 0.8;
+    font-size: 12px;
+    color: #86868b;
   }
 
-  .member-meta {
-    display: flex;
-    gap: 1rem;
-    font-size: 0.7rem;
+  .status-badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
   }
 
-  .membership-type {
-    background: rgba(78, 205, 196, 0.2);
-    color: #4ecdc4;
-    padding: 0.2rem 0.5rem;
-    border-radius: 8px;
-    font-weight: 600;
+  .status-badge.active {
+    background: rgba(40, 202, 66, 0.1);
+    color: #28ca42;
   }
 
-  .member-actions {
-    display: flex;
-    gap: 0.5rem;
+  .status-badge.inactive {
+    background: rgba(255, 59, 48, 0.1);
+    color: #ff3b30;
   }
 
-  .action-btn-small {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.1);
+  .table-action {
+    background: none;
     border: none;
-    color: rgba(255, 255, 255, 0.8);
+    color: #0071e3;
+    font-size: 14px;
     cursor: pointer;
-    transition: all 0.3s ease;
-    font-size: 0.8rem;
   }
 
-  .action-btn-small:hover {
-    background: rgba(255, 255, 255, 0.2);
-    color: #ffffff;
-    transform: scale(1.1);
+  .analytics-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
   }
 
-  .empty-state {
-    text-align: center;
-    padding: 4rem 2rem;
+  .analytics-card {
+    background: #f5f5f7;
+    border-radius: 12px;
+    padding: 24px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
   }
 
-  .empty-icon {
-    font-size: 4rem;
-    margin-bottom: 1rem;
-    opacity: 0.5;
-  }
-
-  .empty-state h3 {
-    margin: 0 0 0.5rem 0;
-    color: #ffffff;
-  }
-
-  .empty-state p {
-    margin: 0 0 2rem 0;
-    opacity: 0.8;
-  }
-
-  .create-gym-btn,
-  .add-member-btn {
-    background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
-    color: #ffffff;
-    border: none;
-    padding: 0.75rem 2rem;
-    border-radius: 15px;
-    cursor: pointer;
+  .analytics-title {
+    font-size: 18px;
     font-weight: 600;
-    display: inline-flex;
+    color: #1d1d1f;
+    margin: 0 0 20px;
+  }
+
+  .chart-placeholder {
+    height: 200px;
+    display: flex;
     align-items: center;
-    gap: 0.5rem;
-    transition: all 0.3s ease;
+    justify-content: center;
+    background: white;
+    border-radius: 8px;
+    color: #86868b;
+    font-size: 14px;
   }
 
-  .create-gym-btn:hover,
-  .add-member-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-  }
+  @media (max-width: 1068px) {
+    .dashboard-container {
+      max-width: 692px;
+    }
 
-  @media (max-width: 1024px) {
-    .content-grid {
+    .stats-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .analytics-grid {
       grid-template-columns: 1fr;
     }
-    
-    .dashboard-header {
-      flex-direction: column;
-      align-items: stretch;
-      text-align: center;
-    }
-    
-    .quick-actions {
-      justify-content: center;
-    }
   }
 
-  @media (max-width: 768px) {
-    .dashboard {
-      padding: 1rem;
+  @media (max-width: 734px) {
+    .dashboard-container {
+      padding: 0 16px;
     }
-    
+
+    .header-content {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 20px;
+    }
+
     .welcome-title {
-      font-size: 2rem;
+      font-size: 28px;
     }
-    
+
     .stats-grid {
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      grid-template-columns: 1fr;
     }
-    
-    .gym-item,
-    .member-item {
-      padding: 1rem;
+
+    .table-header,
+    .table-row {
+      grid-template-columns: 1fr;
+      gap: 8px;
     }
-    
-    .card-header {
-      padding: 1.5rem 1.5rem 1rem;
-    }
-    
-    .gyms-list,
-    .members-list {
-      padding: 1rem 1.5rem 1.5rem;
+
+    .nav-tabs {
+      flex-direction: column;
     }
   }
 </style>

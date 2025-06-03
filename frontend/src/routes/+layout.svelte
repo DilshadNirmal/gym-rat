@@ -25,7 +25,6 @@
   }
 
   onMount(() => {
-    // Close mobile menu when clicking outside
     const handleClickOutside = (event) => {
       if (!event.target.closest('.mobile-menu') && !event.target.closest('.mobile-menu-toggle')) {
         mobileMenuOpen = false;
@@ -49,7 +48,6 @@
       {#if loggedIn}
         <div class="nav-links desktop-only">
           <a href="/dashboard" class="nav-link" class:active={$page.url.pathname === '/dashboard'}>
-            <span class="nav-icon">📊</span>
             Dashboard
           </a>
           <div class="user-menu">
@@ -61,20 +59,18 @@
               <span class="user-role">{currentUser?.role}</span>
             </div>
             <button class="logout-btn" on:click={logout}>
-              <span>🚪</span>
-              Logout
+              Sign Out
             </button>
           </div>
         </div>
 
         <button class="mobile-menu-toggle mobile-only" on:click={toggleMobileMenu}>
-          <span class="hamburger"></span>
+          <span class="hamburger" class:open={mobileMenuOpen}></span>
         </button>
 
         {#if mobileMenuOpen}
           <div class="mobile-menu">
             <a href="/dashboard" class="mobile-nav-link" on:click={() => mobileMenuOpen = false}>
-              <span class="nav-icon">📊</span>
               Dashboard
             </a>
             <div class="mobile-user-info">
@@ -82,8 +78,7 @@
               <span class="user-role">{currentUser?.role}</span>
             </div>
             <button class="mobile-logout-btn" on:click={logout}>
-              <span>🚪</span>
-              Logout
+              Sign Out
             </button>
           </div>
         {/if}
@@ -99,10 +94,13 @@
 <style>
   :global(body) {
     margin: 0;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: #ffffff;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+    background: #f5f5f7;
+    color: #1d1d1f;
     overflow-x: hidden;
+    line-height: 1.47059;
+    font-weight: 400;
+    letter-spacing: -0.022em;
   }
 
   :global(*) {
@@ -116,143 +114,124 @@
   }
 
   .navbar {
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(20px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
     position: sticky;
     top: 0;
-    z-index: 1000;
+    z-index: 9999;
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   }
 
   .nav-container {
-    max-width: 1400px;
+    max-width: 980px;
     margin: 0 auto;
-    padding: 1rem 2rem;
+    padding: 0 22px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    height: 44px;
   }
 
   .brand .logo {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    font-size: 1.5rem;
-    font-weight: bold;
+    gap: 8px;
+    font-size: 21px;
+    font-weight: 600;
+    color: #1d1d1f;
   }
 
   .logo-icon {
-    font-size: 2rem;
-    filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.5));
+    font-size: 24px;
   }
 
   .logo-text {
-    background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: #1d1d1f;
   }
 
   .nav-links {
     display: flex;
     align-items: center;
-    gap: 2rem;
+    gap: 40px;
   }
 
   .nav-link {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: rgba(255, 255, 255, 0.8);
+    color: #1d1d1f;
     text-decoration: none;
-    padding: 0.5rem 1rem;
-    border-radius: 25px;
-    transition: all 0.3s ease;
+    font-size: 12px;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    padding: 8px 0;
     position: relative;
-    overflow: hidden;
-  }
-
-  .nav-link::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-    transition: left 0.5s;
-  }
-
-  .nav-link:hover::before {
-    left: 100%;
+    transition: color 0.3s ease;
   }
 
   .nav-link:hover,
   .nav-link.active {
-    color: #ffffff;
-    background: rgba(255, 255, 255, 0.2);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    color: #0071e3;
   }
 
   .user-menu {
     display: flex;
     align-items: center;
-    gap: 1rem;
-    background: rgba(255, 255, 255, 0.1);
-    padding: 0.5rem 1rem;
-    border-radius: 50px;
-    backdrop-filter: blur(10px);
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.8);
+    padding: 8px 16px;
+    border-radius: 980px;
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(0, 0, 0, 0.1);
   }
 
   .user-avatar {
-    width: 40px;
-    height: 40px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
-    background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+    background: linear-gradient(135deg, #0071e3, #005bb5);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: bold;
-    font-size: 1.2rem;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    font-weight: 600;
+    font-size: 12px;
+    color: white;
   }
 
   .user-info {
     display: flex;
     flex-direction: column;
-    gap: 0.2rem;
+    gap: 2px;
   }
 
   .user-name {
     font-weight: 600;
-    font-size: 0.9rem;
+    font-size: 12px;
+    color: #1d1d1f;
+    line-height: 1.2;
   }
 
   .user-role {
-    font-size: 0.8rem;
-    opacity: 0.7;
-    text-transform: capitalize;
+    font-size: 10px;
+    color: #86868b;
+    text-transform: lowercase;
+    line-height: 1.2;
   }
 
   .logout-btn {
-    background: rgba(255, 107, 107, 0.2);
-    color: #ffffff;
+    background: #0071e3;
+    color: white;
     border: none;
-    padding: 0.5rem 1rem;
-    border-radius: 25px;
+    padding: 6px 14px;
+    border-radius: 980px;
     cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+    font-size: 12px;
+    font-weight: 400;
     transition: all 0.3s ease;
-    font-size: 0.9rem;
+    letter-spacing: -0.01em;
   }
 
   .logout-btn:hover {
-    background: rgba(255, 107, 107, 0.4);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+    background: #0077ed;
+    transform: translateY(-1px);
   }
 
   .mobile-menu-toggle {
@@ -260,22 +239,22 @@
     background: none;
     border: none;
     cursor: pointer;
-    padding: 0.5rem;
-    border-radius: 8px;
+    padding: 8px;
+    border-radius: 6px;
     transition: background-color 0.3s ease;
   }
 
   .mobile-menu-toggle:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.04);
   }
 
   .hamburger {
     display: block;
-    width: 25px;
-    height: 3px;
-    background: #ffffff;
+    width: 18px;
+    height: 2px;
+    background: #1d1d1f;
     position: relative;
-    border-radius: 3px;
+    border-radius: 1px;
     transition: all 0.3s ease;
   }
 
@@ -283,39 +262,53 @@
   .hamburger::after {
     content: '';
     position: absolute;
-    width: 25px;
-    height: 3px;
-    background: #ffffff;
-    border-radius: 3px;
+    width: 18px;
+    height: 2px;
+    background: #1d1d1f;
+    border-radius: 1px;
     transition: all 0.3s ease;
   }
 
   .hamburger::before {
-    top: -8px;
+    top: -6px;
   }
 
   .hamburger::after {
-    bottom: -8px;
+    bottom: -6px;
+  }
+
+  .hamburger.open {
+    background: transparent;
+  }
+
+  .hamburger.open::before {
+    transform: rotate(45deg);
+    top: 0;
+  }
+
+  .hamburger.open::after {
+    transform: rotate(-45deg);
+    bottom: 0;
   }
 
   .mobile-menu {
     position: absolute;
     top: 100%;
-    right: 2rem;
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 15px;
-    padding: 1rem;
+    right: 22px;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: saturate(180%) blur(20px);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+    padding: 16px;
     min-width: 200px;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-    animation: slideDown 0.3s ease;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    animation: slideDown 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   }
 
   @keyframes slideDown {
     from {
       opacity: 0;
-      transform: translateY(-10px);
+      transform: translateY(-8px);
     }
     to {
       opacity: 1;
@@ -326,43 +319,44 @@
   .mobile-nav-link {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    color: #ffffff;
+    color: #1d1d1f;
     text-decoration: none;
-    padding: 0.75rem;
-    border-radius: 10px;
-    transition: background-color 0.3s ease;
-    margin-bottom: 0.5rem;
+    padding: 12px 0;
+    font-size: 14px;
+    font-weight: 400;
+    transition: color 0.3s ease;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  }
+
+  .mobile-nav-link:last-child {
+    border-bottom: none;
   }
 
   .mobile-nav-link:hover {
-    background: rgba(255, 255, 255, 0.1);
+    color: #0071e3;
   }
 
   .mobile-user-info {
-    padding: 0.75rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.2);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-    margin: 0.5rem 0;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    margin-bottom: 12px;
   }
 
   .mobile-logout-btn {
     width: 100%;
-    background: rgba(255, 107, 107, 0.2);
-    color: #ffffff;
+    background: #0071e3;
+    color: white;
     border: none;
-    padding: 0.75rem;
-    border-radius: 10px;
+    padding: 12px;
+    border-radius: 8px;
     cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
+    font-size: 14px;
+    font-weight: 400;
     transition: all 0.3s ease;
   }
 
   .mobile-logout-btn:hover {
-    background: rgba(255, 107, 107, 0.4);
+    background: #0077ed;
   }
 
   .main-content {
@@ -378,7 +372,14 @@
     display: none;
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 1068px) {
+    .nav-container {
+      max-width: 692px;
+      padding: 0 22px;
+    }
+  }
+
+  @media (max-width: 734px) {
     .desktop-only {
       display: none;
     }
@@ -388,7 +389,7 @@
     }
 
     .nav-container {
-      padding: 1rem;
+      padding: 0 16px;
     }
   }
 </style>

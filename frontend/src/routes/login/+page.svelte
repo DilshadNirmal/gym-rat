@@ -1,438 +1,433 @@
 
 <script>
-  import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
-  import { auth } from '$lib/api.js';
   import { user, isLoggedIn } from '$lib/stores.js';
-  
+  import { api } from '$lib/api.js';
+  import { onMount } from 'svelte';
+
   let email = '';
   let password = '';
-  let error = '';
+  let name = '';
+  let phone = '';
+  let role = 'MEMBER';
+  let isLogin = true;
   let loading = false;
-  let showPassword = false;
-  
-  let formElement;
-  
-  async function handleLogin() {
-    if (!email || !password) {
-      error = 'Please fill in all fields';
-      return;
+  let error = '';
+
+  onMount(() => {
+    if ($isLoggedIn) {
+      goto('/dashboard');
     }
+  });
+
+  async function handleSubmit() {
+    if (loading) return;
     
     loading = true;
     error = '';
-    
+
     try {
-      const response = await auth.login({ email, password });
+      const endpoint = isLogin ? '/auth/login' : '/auth/register';
+      const data = isLogin 
+        ? { email, password }
+        : { name, email, password, phone, role };
+
+      const response = await api.post(endpoint, data);
       
-      localStorage.setItem('auth_token', response.token);
-      localStorage.setItem('user_data', JSON.stringify(response.user));
-      
-      user.set(response.user);
-      isLoggedIn.set(true);
-      
-      goto('/dashboard');
+      if (response.token) {
+        localStorage.setItem('auth_token', response.token);
+        localStorage.setItem('user_data', JSON.stringify(response.user));
+        user.set(response.user);
+        isLoggedIn.set(true);
+        goto('/dashboard');
+      }
     } catch (err) {
-      error = err.message || 'Login failed';
-      formElement.classList.add('shake');
-      setTimeout(() => formElement.classList.remove('shake'), 500);
+      error = err.message || 'An error occurred';
     } finally {
       loading = false;
     }
   }
 
-  function togglePassword() {
-    showPassword = !showPassword;
+  function toggleMode() {
+    isLogin = !isLogin;
+    error = '';
+    email = '';
+    password = '';
+    name = '';
+    phone = '';
+    role = 'MEMBER';
   }
-
-  onMount(() => {
-    // Create floating particles
-    const container = document.querySelector('.login-container');
-    for (let i = 0; i < 50; i++) {
-      const particle = document.createElement('div');
-      particle.className = 'particle';
-      particle.style.left = Math.random() * 100 + '%';
-      particle.style.animationDelay = Math.random() * 20 + 's';
-      particle.style.animationDuration = (Math.random() * 10 + 10) + 's';
-      container.appendChild(particle);
-    }
-  });
 </script>
 
-<div class="login-container">
-  <div class="login-form" bind:this={formElement}>
-    <div class="form-header">
-      <div class="logo-container">
-        <div class="logo-icon">🏋️‍♂️</div>
-        <h2>Welcome to GymRat</h2>
-        <p class="subtitle">Enter your credentials to access your dashboard</p>
+<div class="auth-page">
+  <div class="auth-container">
+    <div class="auth-content">
+      <div class="auth-header">
+        <div class="logo">
+          <span class="logo-icon">🏋️‍♂️</span>
+          <span class="logo-text">GymRat</span>
+        </div>
+        <h1 class="auth-title">
+          {isLogin ? 'Welcome back.' : 'Get started with GymRat.'}
+        </h1>
+        <p class="auth-subtitle">
+          {isLogin 
+            ? 'Sign in to access your gym management dashboard.' 
+            : 'Create your account and transform your fitness business.'}
+        </p>
+      </div>
+
+      <form class="auth-form" on:submit|preventDefault={handleSubmit}>
+        {#if !isLogin}
+          <div class="form-group">
+            <label for="name" class="form-label">Full Name</label>
+            <input
+              type="text"
+              id="name"
+              bind:value={name}
+              required
+              class="form-input"
+              placeholder="Enter your full name"
+            />
+          </div>
+        {/if}
+
+        <div class="form-group">
+          <label for="email" class="form-label">Email Address</label>
+          <input
+            type="email"
+            id="email"
+            bind:value={email}
+            required
+            class="form-input"
+            placeholder="Enter your email"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="password" class="form-label">Password</label>
+          <input
+            type="password"
+            id="password"
+            bind:value={password}
+            required
+            class="form-input"
+            placeholder="Enter your password"
+          />
+        </div>
+
+        {#if !isLogin}
+          <div class="form-group">
+            <label for="phone" class="form-label">Phone Number</label>
+            <input
+              type="tel"
+              id="phone"
+              bind:value={phone}
+              required
+              class="form-input"
+              placeholder="Enter your phone number"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="role" class="form-label">Account Type</label>
+            <select id="role" bind:value={role} class="form-select">
+              <option value="MEMBER">Member</option>
+              <option value="GYM_OWNER">Gym Owner</option>
+              <option value="ADMIN">Administrator</option>
+            </select>
+          </div>
+        {/if}
+
+        {#if error}
+          <div class="error-message">
+            {error}
+          </div>
+        {/if}
+
+        <button type="submit" class="submit-button" disabled={loading}>
+          {loading ? 'Please wait...' : (isLogin ? 'Sign In' : 'Create Account')}
+        </button>
+      </form>
+
+      <div class="auth-footer">
+        <p class="switch-text">
+          {isLogin ? "Don't have an account?" : 'Already have an account?'}
+          <button class="switch-button" on:click={toggleMode}>
+            {isLogin ? 'Sign up' : 'Sign in'}
+          </button>
+        </p>
       </div>
     </div>
-    
-    {#if error}
-      <div class="error-message">{error}</div>
-    {/if}
-    
-    <form on:submit|preventDefault={handleLogin}>
-      <div class="input-group">
-        <div class="input-container">
-          <input 
-            type="email" 
-            id="email" 
-            bind:value={email}
-            placeholder=" "
-            required
-            disabled={loading}
-            class="form-input"
-          />
-          <label for="email" class="form-label">📧 Email Address</label>
-          <div class="input-line"></div>
-        </div>
-      </div>
-      
-      <div class="input-group">
-        <div class="input-container">
-          <input 
-            type={showPassword ? 'text' : 'password'}
-            id="password" 
-            bind:value={password}
-            placeholder=" "
-            required
-            disabled={loading}
-            class="form-input"
-          />
-          <label for="password" class="form-label">🔒 Password</label>
-          <button type="button" class="password-toggle" on:click={togglePassword}>
-            {showPassword ? '👁️' : '🙈'}
-          </button>
-          <div class="input-line"></div>
-        </div>
-      </div>
-      
-      <button type="submit" class="submit-btn" disabled={loading}>
-        {#if loading}
-          <div class="loading-spinner"></div>
-          <span>Logging in...</span>
-        {:else}
-          <span>🚀 Launch Dashboard</span>
-        {/if}
-      </button>
-    </form>
 
-    <div class="form-footer">
-      <p>Don't have an account? <a href="#" class="signup-link">Contact Admin</a></p>
+    <div class="auth-visual">
+      <div class="visual-content">
+        <div class="feature-highlight">
+          <div class="highlight-icon">📊</div>
+          <h3>Real-time Analytics</h3>
+          <p>Get instant insights into your gym's performance with beautiful, actionable dashboards.</p>
+        </div>
+        <div class="feature-highlight">
+          <div class="highlight-icon">🔒</div>
+          <h3>Enterprise Security</h3>
+          <p>Your data is protected with bank-level security and advanced encryption.</p>
+        </div>
+        <div class="feature-highlight">
+          <div class="highlight-icon">🌍</div>
+          <h3>Global Reach</h3>
+          <p>Trusted by fitness businesses worldwide, from boutique studios to large chains.</p>
+        </div>
+      </div>
     </div>
   </div>
 </div>
 
 <style>
-  .login-container {
+  .auth-page {
     min-height: 100vh;
+    background: #f5f5f7;
     display: flex;
-    justify-content: center;
     align-items: center;
-    padding: 2rem;
-    position: relative;
-    overflow: hidden;
+    justify-content: center;
+    padding: 20px;
   }
 
-  .particle {
-    position: absolute;
-    width: 2px;
-    height: 2px;
-    background: rgba(255, 255, 255, 0.3);
-    border-radius: 50%;
-    animation: float linear infinite;
-  }
-
-  @keyframes float {
-    0% {
-      transform: translateY(100vh) rotate(0deg);
-      opacity: 0;
-    }
-    10% {
-      opacity: 1;
-    }
-    90% {
-      opacity: 1;
-    }
-    100% {
-      transform: translateY(-10vh) rotate(360deg);
-      opacity: 0;
-    }
-  }
-
-  .login-form {
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 25px;
-    padding: 3rem;
+  .auth-container {
+    max-width: 1200px;
     width: 100%;
-    max-width: 450px;
-    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
-    position: relative;
+    background: white;
+    border-radius: 18px;
+    box-shadow: 0 4px 40px rgba(0, 0, 0, 0.1);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     overflow: hidden;
-    animation: slideUp 0.8s ease;
+    min-height: 600px;
   }
 
-  .login-form::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-    transition: left 0.8s;
+  .auth-content {
+    padding: 60px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
   }
 
-  .login-form:hover::before {
-    left: 100%;
+  .auth-header {
+    margin-bottom: 40px;
   }
 
-  @keyframes slideUp {
-    from {
-      transform: translateY(50px);
-      opacity: 0;
-    }
-    to {
-      transform: translateY(0);
-      opacity: 1;
-    }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 32px;
   }
 
-  .shake {
-    animation: shake 0.5s ease-in-out;
+  .logo-icon {
+    font-size: 32px;
   }
 
-  @keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-10px); }
-    75% { transform: translateX(10px); }
+  .logo-text {
+    font-size: 24px;
+    font-weight: 600;
+    color: #1d1d1f;
   }
 
-  .form-header {
-    text-align: center;
-    margin-bottom: 2rem;
+  .auth-title {
+    font-size: 32px;
+    line-height: 1.125;
+    font-weight: 600;
+    letter-spacing: 0.004em;
+    margin: 0 0 16px;
+    color: #1d1d1f;
   }
 
-  .logo-container .logo-icon {
-    font-size: 4rem;
-    margin-bottom: 1rem;
-    display: block;
-    filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.5));
-    animation: pulse 2s infinite;
-  }
-
-  @keyframes pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.05); }
-  }
-
-  .logo-container h2 {
-    margin: 0 0 0.5rem 0;
-    font-size: 2rem;
-    font-weight: bold;
-    background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .subtitle {
+  .auth-subtitle {
+    font-size: 17px;
+    line-height: 1.47059;
+    font-weight: 400;
+    letter-spacing: -0.022em;
     margin: 0;
-    opacity: 0.8;
-    font-size: 0.9rem;
+    color: #86868b;
   }
 
-  .input-group {
-    margin-bottom: 2rem;
+  .auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
   }
 
-  .input-container {
-    position: relative;
-  }
-
-  .form-input {
-    width: 100%;
-    padding: 1rem 1rem 1rem 3rem;
-    background: rgba(255, 255, 255, 0.05);
-    border: 2px solid rgba(255, 255, 255, 0.1);
-    border-radius: 15px;
-    color: #ffffff;
-    font-size: 1rem;
-    transition: all 0.3s ease;
-    backdrop-filter: blur(10px);
-  }
-
-  .form-input:focus {
-    outline: none;
-    border-color: rgba(78, 205, 196, 0.6);
-    background: rgba(255, 255, 255, 0.1);
-    box-shadow: 0 0 20px rgba(78, 205, 196, 0.3);
-  }
-
-  .form-input:focus + .form-label,
-  .form-input:not(:placeholder-shown) + .form-label {
-    transform: translateY(-2.5rem) scale(0.8);
-    color: #4ecdc4;
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
   }
 
   .form-label {
-    position: absolute;
-    left: 1rem;
-    top: 1rem;
-    color: rgba(255, 255, 255, 0.7);
+    font-size: 14px;
+    font-weight: 400;
+    color: #1d1d1f;
+    letter-spacing: -0.016em;
+  }
+
+  .form-input,
+  .form-select {
+    padding: 16px;
+    border: 1px solid #d2d2d7;
+    border-radius: 12px;
+    font-size: 17px;
+    line-height: 1.23536;
+    font-weight: 400;
+    letter-spacing: -0.022em;
+    background: white;
     transition: all 0.3s ease;
-    pointer-events: none;
-    font-size: 0.9rem;
+    color: #1d1d1f;
   }
 
-  .input-line {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 0;
-    height: 2px;
-    background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
-    transition: width 0.3s ease;
+  .form-input:focus,
+  .form-select:focus {
+    outline: none;
+    border-color: #0071e3;
+    box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.1);
   }
 
-  .form-input:focus ~ .input-line {
-    width: 100%;
+  .form-input::placeholder {
+    color: #86868b;
   }
 
-  .password-toggle {
-    position: absolute;
-    right: 1rem;
-    top: 50%;
-    transform: translateY(-50%);
-    background: none;
+  .error-message {
+    background: #ff3b30;
+    color: white;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    text-align: center;
+  }
+
+  .submit-button {
+    background: #0071e3;
+    color: white;
     border: none;
-    color: rgba(255, 255, 255, 0.7);
-    cursor: pointer;
-    font-size: 1.2rem;
-    transition: all 0.3s ease;
-  }
-
-  .password-toggle:hover {
-    color: #ffffff;
-    transform: translateY(-50%) scale(1.1);
-  }
-
-  .submit-btn {
-    width: 100%;
-    padding: 1rem;
-    background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
-    color: #ffffff;
-    border: none;
-    border-radius: 15px;
-    font-size: 1.1rem;
-    font-weight: bold;
+    padding: 16px;
+    border-radius: 12px;
+    font-size: 17px;
+    line-height: 1.23536;
+    font-weight: 400;
+    letter-spacing: -0.022em;
     cursor: pointer;
     transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
+    margin-top: 8px;
   }
 
-  .submit-btn::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-    transition: left 0.5s;
+  .submit-button:hover:not(:disabled) {
+    background: #0077ed;
+    transform: translateY(-1px);
   }
 
-  .submit-btn:hover::before {
-    left: 100%;
-  }
-
-  .submit-btn:hover:not(:disabled) {
-    transform: translateY(-3px);
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-  }
-
-  .submit-btn:disabled {
-    opacity: 0.7;
+  .submit-button:disabled {
+    opacity: 0.6;
     cursor: not-allowed;
     transform: none;
   }
 
-  .loading-spinner {
-    width: 20px;
-    height: 20px;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    border-top: 2px solid #ffffff;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-  }
-
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-
-  .error-message {
-    background: rgba(255, 107, 107, 0.2);
-    color: #ff6b6b;
-    padding: 1rem;
-    border-radius: 15px;
-    margin-bottom: 1.5rem;
-    border: 1px solid rgba(255, 107, 107, 0.3);
-    backdrop-filter: blur(10px);
-    animation: fadeIn 0.3s ease;
-  }
-
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .form-footer {
+  .auth-footer {
+    margin-top: 32px;
     text-align: center;
-    margin-top: 2rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
   }
 
-  .form-footer p {
+  .switch-text {
+    font-size: 14px;
+    color: #86868b;
     margin: 0;
-    opacity: 0.8;
-    font-size: 0.9rem;
   }
 
-  .signup-link {
-    color: #4ecdc4;
+  .switch-button {
+    background: none;
+    border: none;
+    color: #0071e3;
+    font-size: 14px;
+    cursor: pointer;
     text-decoration: none;
-    font-weight: bold;
-    transition: all 0.3s ease;
+    padding: 0;
+    margin-left: 4px;
   }
 
-  .signup-link:hover {
-    color: #ff6b6b;
-    text-shadow: 0 0 10px rgba(255, 107, 107, 0.5);
+  .switch-button:hover {
+    text-decoration: underline;
   }
 
-  @media (max-width: 480px) {
-    .login-form {
-      padding: 2rem;
-      margin: 1rem;
+  .auth-visual {
+    background: linear-gradient(135deg, #0071e3, #005bb5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 40px;
+    color: white;
+  }
+
+  .visual-content {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+    max-width: 400px;
+  }
+
+  .feature-highlight {
+    text-align: center;
+  }
+
+  .highlight-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    display: block;
+  }
+
+  .feature-highlight h3 {
+    font-size: 21px;
+    line-height: 1.381;
+    font-weight: 600;
+    letter-spacing: 0.011em;
+    margin: 0 0 12px;
+  }
+
+  .feature-highlight p {
+    font-size: 17px;
+    line-height: 1.47059;
+    font-weight: 400;
+    letter-spacing: -0.022em;
+    margin: 0;
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+  @media (max-width: 1068px) {
+    .auth-container {
+      grid-template-columns: 1fr;
+      max-width: 500px;
     }
-    
-    .logo-container .logo-icon {
-      font-size: 3rem;
+
+    .auth-visual {
+      display: none;
     }
-    
-    .logo-container h2 {
-      font-size: 1.5rem;
+
+    .auth-content {
+      padding: 40px;
+    }
+  }
+
+  @media (max-width: 734px) {
+    .auth-page {
+      padding: 16px;
+    }
+
+    .auth-content {
+      padding: 32px 24px;
+    }
+
+    .auth-title {
+      font-size: 28px;
+    }
+
+    .auth-subtitle {
+      font-size: 16px;
     }
   }
 </style>
