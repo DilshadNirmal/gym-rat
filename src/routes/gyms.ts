@@ -60,22 +60,6 @@ gyms.post("/", authMiddleware, requireRole(["ADMIN", "GYM_OWNER"]), zValidator("
   }
 });
 
-export { gyms };
-
-const createGymSchema = z.object({
-  name: z.string().min(2),
-  location: z.object({
-    address: z.string(),
-    city: z.string(),
-    state: z.string(),
-    country: z.string(),
-    pincode: z.string()
-  }),
-  subscription: z.object({
-    plan: z.enum(["BASIC", "PRO", "PREMIUM", "ENTERPRISE"])
-  })
-});
-
 gyms.use("*", authMiddleware);
 
 gyms.post("/", 

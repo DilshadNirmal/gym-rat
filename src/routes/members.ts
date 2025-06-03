@@ -63,8 +63,6 @@ members.post("/", authMiddleware, requireRole(["ADMIN", "GYM_OWNER"]), zValidato
   }
 });
 
-export { members };
-
 const attendanceSchema = z.object({
   memberId: z.string(),
   verificationMethod: z.enum(["QR", "MANUAL", "PHOTO"])
