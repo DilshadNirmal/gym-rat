@@ -1,7 +1,11 @@
 {
   "name": "gym-rat",
   "scripts": {
-    "dev": "bun run --hot src/index.ts"
+    "dev": "bun run --hot src/index.ts",
+    "start": "bun run src/index.ts",
+    "frontend:install": "cd frontend && bun install",
+    "frontend:dev": "cd frontend && bun run dev",
+    "frontend:build": "cd frontend && bun run build"
   },
   "dependencies": {
     "@hono/zod-validator": "^0.4.2",

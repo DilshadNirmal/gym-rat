@@ -82,74 +82,108 @@
 
 <style>
   .dashboard {
-    max-width: 1200px;
+    max-width: var(--size-content-3);
     margin: 0 auto;
   }
 
   .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1rem;
-    margin: 2rem 0;
+    grid-template-columns: repeat(auto-fit, minmax(var(--size-14), 1fr));
+    gap: var(--size-4);
+    margin: var(--size-6) 0;
   }
 
   .stat-card {
-    background: white;
-    padding: 1.5rem;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    background: var(--surface-1);
+    padding: var(--size-5);
+    border-radius: var(--radius-3);
+    box-shadow: var(--shadow-2);
     text-align: center;
+    border: var(--border-size-1) solid var(--surface-3);
+  }
+
+  .stat-card h3 {
+    margin: 0 0 var(--size-2) 0;
+    color: var(--text-2);
+    font-size: var(--font-size-2);
+    font-weight: var(--font-weight-6);
   }
 
   .stat-number {
-    font-size: 2.5rem;
-    font-weight: bold;
-    color: #3498db;
-    margin-top: 0.5rem;
+    font-size: var(--font-size-7);
+    font-weight: var(--font-weight-8);
+    color: var(--blue-6);
+    margin: 0;
+  }
+
+  .gyms-section h2 {
+    margin: var(--size-6) 0 var(--size-4) 0;
+    color: var(--text-1);
+    font-size: var(--font-size-5);
   }
 
   .gyms-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(var(--size-17), 1fr));
+    gap: var(--size-4);
   }
 
   .gym-card {
-    background: white;
-    padding: 1.5rem;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    background: var(--surface-1);
+    padding: var(--size-5);
+    border-radius: var(--radius-3);
+    box-shadow: var(--shadow-2);
+    border: var(--border-size-1) solid var(--surface-3);
+  }
+
+  .gym-card h3 {
+    margin: 0 0 var(--size-2) 0;
+    color: var(--text-1);
+    font-size: var(--font-size-3);
+  }
+
+  .gym-card p {
+    margin: 0 0 var(--size-3) 0;
+    color: var(--text-2);
   }
 
   .gym-status {
-    margin: 1rem 0;
+    margin: var(--size-3) 0;
   }
 
   .status {
-    padding: 0.25rem 0.75rem;
-    border-radius: 12px;
-    font-size: 0.8rem;
+    padding: var(--size-1) var(--size-3);
+    border-radius: var(--radius-pill);
+    font-size: var(--font-size-0);
     text-transform: uppercase;
-    font-weight: bold;
+    font-weight: var(--font-weight-6);
+    display: inline-block;
   }
 
   .status.active {
-    background-color: #d4edda;
-    color: #155724;
+    background-color: var(--green-2);
+    color: var(--green-9);
   }
 
   .status.expired {
-    background-color: #f8d7da;
-    color: #721c24;
+    background-color: var(--red-2);
+    color: var(--red-9);
   }
 
   .view-btn {
     display: inline-block;
-    background-color: #3498db;
+    background-color: var(--blue-6);
     color: white;
-    padding: 0.5rem 1rem;
+    padding: var(--size-2) var(--size-4);
     text-decoration: none;
-    border-radius: 4px;
-    margin-top: 1rem;
+    border-radius: var(--radius-2);
+    margin-top: var(--size-3);
+    font-size: var(--font-size-1);
+    font-weight: var(--font-weight-5);
+    transition: background-color 0.2s;
+  }
+
+  .view-btn:hover {
+    background-color: var(--blue-7);
   }
 </style>
