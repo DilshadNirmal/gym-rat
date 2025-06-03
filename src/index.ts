@@ -39,3 +39,5 @@ export default {
   fetch: app.fetch,
   port: PORT,
 };
+  port: PORT,
+};
