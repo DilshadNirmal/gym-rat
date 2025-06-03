@@ -8,7 +8,7 @@ channel = "stable-24_05"
 run = ["sh", "-c", "bun run dev"]
 
 [workflows]
-runButton = "Start Backend"
+runButton = "Full Stack Dev"
 
 [[workflows.workflow]]
 name = "Start Backend"
@@ -18,3 +18,25 @@ mode = "sequential"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "bun run --hot src/index.ts"
+
+[[workflows.workflow]]
+name = "Start Frontend"
+author = 43431029
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd frontend && bun run dev"
+
+[[workflows.workflow]]
+name = "Full Stack Dev"
+author = 43431029
+mode = "parallel"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "bun run dev"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd frontend && bun run dev"
