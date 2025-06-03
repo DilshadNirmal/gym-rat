@@ -6,6 +6,10 @@ export default defineConfig({
 	plugins: [sveltekit()],
 	server: {
 		host: '0.0.0.0',
-		port: 5000
+		port: 5000,
+		allowedHosts: [
+			'.replit.dev',
+			'.repl.co'
+		]
 	}
 });
