@@ -1,3 +1,4 @@
+
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { prettyJSON } from "hono/pretty-json";
@@ -37,7 +38,5 @@ connect(MONGODB_URI)
 
 export default {
   fetch: app.fetch,
-  port: PORT,
-};
   port: PORT,
 };
